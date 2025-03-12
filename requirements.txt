@@ -1,0 +1,7 @@
+pymysql
+pandas
+transformers
+nltk
+scikit-learn
+torch
+tensorflow

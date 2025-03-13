@@ -1,9 +1,14 @@
-from db_connection import get_conversations , create_conversation_review_table , fetch_conversation_review , fetch_conversation_by_id
+from db_connection import get_conversations , create_conversation_review_table , fetch_conversation_review , fetch_conversation_by_id 
 from model import classify_conversation , store_classification_results
 import pandas as pd
 from sklearn.metrics import classification_report, confusion_matrix
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import openai
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # , store_classification_results
 # , create_conversation_review_table
@@ -25,6 +30,12 @@ from pydantic import BaseModel
 
 # FastAPI app initialization
 app = FastAPI()
+
+# OpenAI API Key
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Initialize OpenAI API client
+openai.api_key = OPENAI_API_KEY
 
 # Store ground truth and predictions
 y_true = []  # Actual labels (manually set or fetched from DB)
@@ -59,6 +70,57 @@ def run_classification_pipelines():
 # Request model for conversation ID
 class ConversationRequest(BaseModel):
     conversation_id: int
+
+# class ConversationResponse(BaseModel):
+#     conversation_id: int
+#     classification: str
+
+class ConversationResponse(BaseModel):
+    conversation_id: int
+    classification: str  # 'successful' or 'unsuccessful'
+    conversation: str  # Full conversation text
+
+class Config:
+    orm_mode = True
+
+@app.post("/classify-conversation-openai/", response_model=ConversationResponse)
+async def classify_conversation(request: ConversationRequest):
+    conversation_id = request.conversation_id
+
+    # Retrieve the conversation data using the get_conversations function
+    df_conversation = get_conversations(conversation_id)
+
+    if df_conversation.empty or 'mergedmessages' not in df_conversation.columns:
+        raise HTTPException(status_code=404, detail="Conversation not found or missing 'mergedmessages' column")
+
+    # Concatenate all merged messages in the conversation into a single string
+    conversation_text = " ".join(df_conversation['mergedmessages'].dropna())
+
+    # Prepare a message prompt for OpenAI to classify the conversation
+    prompt = f"Classify the following conversation as either successful or unsuccessful: {conversation_text}"
+
+    try:
+        # Make an API call to OpenAI using the new chat-completion method
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Or choose another model (gpt-3.5-turbo, gpt-4, etc.)
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        # Extract the classification from OpenAI's response
+        classification = response['choices'][0]['message']['content'].strip()
+
+        # Return the classification and full conversation text as part of the response
+        return ConversationResponse(
+            conversation_id=conversation_id, 
+            classification=classification, 
+            conversation=conversation_text  # Full conversation included
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error with OpenAI API: {str(e)}")
 
 # Endpoint to classify a specific conversation by ID
 # Endpoint to fetch and classify conversation

@@ -52,78 +52,79 @@ def clean_df_outgoing(df_outgoing):
     df_outgoing["BotMessage"] = df_outgoing["BotMessage"].apply(extract_text_from_json)
     return df_outgoing
 
-def get_conversations(conversation_id: int):
-    # Connect to the database
-    connection = mysql.connector.connect(
-        host="pcz218dbl23",
-        user="prakashd",
-        password="TLzWqu8Kyp",
-        database="omni_qa_db"
-    )
+# Original get code
+# def get_conversations(conversation_id: int):
+#     # Connect to the database
+#     connection = mysql.connector.connect(
+#         host="pcz218dbl23",
+#         user="prakashd",
+#         password="TLzWqu8Kyp",
+#         database="omni_qa_db"
+#     )
 
-    cursor = connection.cursor()
+#     cursor = connection.cursor()
     
-    # Retrieve incoming and outgoing conversation messages
-    # cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming ")
-    # incoming = cursor.fetchall()
+#     # Retrieve incoming and outgoing conversation messages
+#     # cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming ")
+#     # incoming = cursor.fetchall()
     
-    # cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing ")
-    # outgoing = cursor.fetchall()
+#     # cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing ")
+#     # outgoing = cursor.fetchall()
 
-    # Retrieve incoming conversation messages for a specific conversation ID
-    cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming WHERE conversationid = %s", (conversation_id,))
-    incoming = cursor.fetchall()
+#     # Retrieve incoming conversation messages for a specific conversation ID
+#     cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming WHERE conversationid = %s", (conversation_id,))
+#     incoming = cursor.fetchall()
         
-    # Retrieve outgoing conversation messages for a specific conversation ID
-    cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing WHERE conversationid = %s", (conversation_id,))
-    outgoing = cursor.fetchall()
+#     # Retrieve outgoing conversation messages for a specific conversation ID
+#     cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing WHERE conversationid = %s", (conversation_id,))
+#     outgoing = cursor.fetchall()
 
-    # Close connection
-    cursor.close()
-    connection.close()
+#     # Close connection
+#     cursor.close()
+#     connection.close()
     
-    # Create dataframes
-    df_incoming = pd.DataFrame(incoming, columns=["ConversationId", "UserMessage", "Timestamp"])
-    df_outgoing = pd.DataFrame(outgoing, columns=["ConversationId", "BotMessage", "Timestamp"])
+#     # Create dataframes
+#     df_incoming = pd.DataFrame(incoming, columns=["ConversationId", "UserMessage", "Timestamp"])
+#     df_outgoing = pd.DataFrame(outgoing, columns=["ConversationId", "BotMessage", "Timestamp"])
 
-    # Convert timestamps to datetime
-    df_incoming["Timestamp"] = pd.to_datetime(df_incoming["Timestamp"])
-    df_outgoing["Timestamp"] = pd.to_datetime(df_outgoing["Timestamp"])
+#     # Convert timestamps to datetime
+#     df_incoming["Timestamp"] = pd.to_datetime(df_incoming["Timestamp"])
+#     df_outgoing["Timestamp"] = pd.to_datetime(df_outgoing["Timestamp"])
 
-    # Merge user and bot messages on ConversationId and Timestamp
-    df_combined = pd.merge(df_incoming, df_outgoing, on=["ConversationId", "Timestamp"], how="outer")
+#     # Merge user and bot messages on ConversationId and Timestamp
+#     df_combined = pd.merge(df_incoming, df_outgoing, on=["ConversationId", "Timestamp"], how="outer")
 
-    # Sort by ConversationId and Timestamp
-    df_combined.sort_values(by=["ConversationId", "Timestamp"], inplace=True)
+#     # Sort by ConversationId and Timestamp
+#     df_combined.sort_values(by=["ConversationId", "Timestamp"], inplace=True)
    
-    # Save to pickle for later use
-    df_combined.to_pickle("cleaned_conversations.pkl")
-    df_combined.to_csv('cleaned_conversations.csv', index=False)
+#     # Save to pickle for later use
+#     df_combined.to_pickle("cleaned_conversations.pkl")
+#     df_combined.to_csv('cleaned_conversations.csv', index=False)
 
-    # Group by ConversationId to form entire conversations ----------------------
-    df_grouped = df_combined.groupby("ConversationId").agg({
-        "UserMessage": lambda x: " ".join(x.dropna()),  # Combine user messages
-        "BotMessage": lambda x: " ".join(x.dropna())    # Combine bot responses
-    }).reset_index()
-    # Save grouped conversations
-    df_grouped.to_pickle("grouped_conversations.pkl")
-    df_grouped.to_csv('grouped_conversations.csv', index=False)
-    # Group by ConversationId to form entire conversations ----------------------
+#     # Group by ConversationId to form entire conversations ----------------------
+#     df_grouped = df_combined.groupby("ConversationId").agg({
+#         "UserMessage": lambda x: " ".join(x.dropna()),  # Combine user messages
+#         "BotMessage": lambda x: " ".join(x.dropna())    # Combine bot responses
+#     }).reset_index()
+#     # Save grouped conversations
+#     df_grouped.to_pickle("grouped_conversations.pkl")
+#     df_grouped.to_csv('grouped_conversations.csv', index=False)
+#     # Group by ConversationId to form entire conversations ----------------------
 
-    # Drop rows with NaN values in user or bot messages
-    # df_cleaned = df_combined.dropna(subset=["UserMessage", "BotMessage"])
+#     # Drop rows with NaN values in user or bot messages
+#     # df_cleaned = df_combined.dropna(subset=["UserMessage", "BotMessage"])
 
-    # calling function to remove json bot messages ----------------------
-    df_processed = process_message(df_grouped)
-    df_processed.to_pickle("cleaned_conversations_processed.pkl")
-    df_processed.to_csv("cleaned_conversations_processed.csv", index=False)
-    # calling function to remove json bot messages ----------------------
+#     # calling function to remove json bot messages ----------------------
+#     df_processed = process_message(df_grouped)
+#     df_processed.to_pickle("cleaned_conversations_processed.pkl")
+#     df_processed.to_csv("cleaned_conversations_processed.csv", index=False)
+#     # calling function to remove json bot messages ----------------------
 
-    print("Fetched, processed bot messages, and saved to cleaned_conversations.csv")
-    print(df_processed)
+#     print("Fetched, processed bot messages, and saved to cleaned_conversations.csv")
+#     print(df_processed)
 
-    # return df_processed
-    return df_processed
+#     # return df_processed
+#     return df_processed
 
     # # Convert Timestamp to datetime
     # df_incoming["Timestamp"] = pd.to_datetime(df_incoming["Timestamp"])
@@ -267,6 +268,7 @@ def fetch_conversation_by_id(conversation_id: 33):
         connection.close()
 fetch_conversation_by_id(33)
 # get_conversations()
+
 def create_conversation_review_table():
 
     # Connect to the database
@@ -349,3 +351,139 @@ def fetch_conversation_review():
             cursor.close()
         if connection:
             connection.close()
+
+def get_conversations(conversation_id: int):
+
+    #conversation_id: int
+    # Connect to the database
+    connection = mysql.connector.connect(
+        host="pcz218dbl23",
+        user="prakashd",
+        password="TLzWqu8Kyp",
+        database="omni_qa_db"
+    )
+
+    cursor = connection.cursor()
+
+    # cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming ")
+    # incoming = cursor.fetchall()
+    
+    # cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing ")
+    # outgoing = cursor.fetchall()
+
+    # Retrieve incoming conversation messages for a specific conversation ID
+    cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming WHERE conversationid = %s", (conversation_id,))
+    incoming = cursor.fetchall()
+
+    # Retrieve outgoing conversation messages for a specific conversation ID
+    cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing WHERE conversationid = %s", (conversation_id,))
+    outgoing = cursor.fetchall()
+
+    # Close connection
+    cursor.close()
+    connection.close()
+
+    # Create dataframes for incoming and outgoing messages
+    df_incoming = pd.DataFrame(incoming, columns=["ConversationId", "UserMessage", "Timestamp"])
+    df_outgoing = pd.DataFrame(outgoing, columns=["ConversationId", "BotMessage", "Timestamp"])
+
+    df_outgoing = clean_df_outgoing(df_outgoing)
+
+    # Convert timestamps to datetime
+    df_incoming["Timestamp"] = pd.to_datetime(df_incoming["Timestamp"])
+    df_outgoing["Timestamp"] = pd.to_datetime(df_outgoing["Timestamp"])
+
+    # Add Speaker column (user for incoming, bot for outgoing)
+    df_incoming['Speaker'] = 'user'
+    df_outgoing['Speaker'] = 'bot'
+
+    # Rename columns for consistency
+    df_incoming.rename(columns={'UserMessage': 'MessageText'}, inplace=True)
+    df_outgoing.rename(columns={'BotMessage': 'MessageText'}, inplace=True)
+
+    # Combine both incoming and outgoing messages into one dataframe
+    df_combined = pd.concat([df_incoming[['ConversationId', 'Timestamp', 'Speaker', 'MessageText']],
+                             df_outgoing[['ConversationId', 'Timestamp', 'Speaker', 'MessageText']]], ignore_index=True)
+
+    # Sort the combined dataframe by ConversationId and Timestamp
+    df_combined = df_combined.sort_values(by=['ConversationId', 'Timestamp'])
+
+    # Create a mergedmessages column by concatenating Speaker and MessageText
+    df_combined['mergedmessages'] = df_combined['Speaker'] + ': ' + df_combined['MessageText']
+
+    # Group by ConversationId to form the entire conversation as a single text block
+    df_final = df_combined.groupby("ConversationId")['mergedmessages'].apply(lambda x: ' '.join(x.astype(str).fillna(''))).reset_index()
+
+    # Grouped conversations saved for later use
+    df_final.to_pickle("final_convo.pkl")
+    df_final.to_csv("final_convo.csv", index=False)
+
+    return df_final
+
+def get_conversation():
+    #conversation_id: int
+    # Connect to the database
+    connection = mysql.connector.connect(
+        host="pcz218dbl23",
+        user="prakashd",
+        password="TLzWqu8Kyp",
+        database="omni_qa_db"
+    )
+
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming ")
+    incoming = cursor.fetchall()
+    
+    cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing ")
+    outgoing = cursor.fetchall()
+
+    # Retrieve incoming conversation messages for a specific conversation ID
+    # cursor.execute("SELECT conversationid, message, conversationincomingtime FROM conversationincoming WHERE conversationid = %s", (conversation_id,))
+    # incoming = cursor.fetchall()
+
+    # # Retrieve outgoing conversation messages for a specific conversation ID
+    # cursor.execute("SELECT conversationid, message, conversationoutgoingtime FROM conversationoutgoing WHERE conversationid = %s", (conversation_id,))
+    # outgoing = cursor.fetchall()
+
+    # Close connection
+    cursor.close()
+    connection.close()
+
+    # Create dataframes for incoming and outgoing messages
+    df_incoming = pd.DataFrame(incoming, columns=["ConversationId", "UserMessage", "Timestamp"])
+    df_outgoing = pd.DataFrame(outgoing, columns=["ConversationId", "BotMessage", "Timestamp"])
+
+    df_outgoing = clean_df_outgoing(df_outgoing)
+
+    # Convert timestamps to datetime
+    df_incoming["Timestamp"] = pd.to_datetime(df_incoming["Timestamp"])
+    df_outgoing["Timestamp"] = pd.to_datetime(df_outgoing["Timestamp"])
+
+    # Add Speaker column (user for incoming, bot for outgoing)
+    df_incoming['Speaker'] = 'user'
+    df_outgoing['Speaker'] = 'bot'
+
+    # Rename columns for consistency
+    df_incoming.rename(columns={'UserMessage': 'MessageText'}, inplace=True)
+    df_outgoing.rename(columns={'BotMessage': 'MessageText'}, inplace=True)
+
+    # Combine both incoming and outgoing messages into one dataframe
+    df_combined = pd.concat([df_incoming[['ConversationId', 'Timestamp', 'Speaker', 'MessageText']],
+                             df_outgoing[['ConversationId', 'Timestamp', 'Speaker', 'MessageText']]], ignore_index=True)
+
+    # Sort the combined dataframe by ConversationId and Timestamp
+    df_combined = df_combined.sort_values(by=['ConversationId', 'Timestamp'])
+
+    # Create a mergedmessages column by concatenating Speaker and MessageText
+    df_combined['mergedmessages'] = df_combined['Speaker'] + ': ' + df_combined['MessageText']
+
+    # Group by ConversationId to form the entire conversation as a single text block
+    df_final = df_combined.groupby("ConversationId")['mergedmessages'].apply(lambda x: ' '.join(x.astype(str).fillna(''))).reset_index()
+
+    # Grouped conversations saved for later use
+    df_final.to_pickle("final_convo.pkl")
+    df_final.to_csv("final_convo.csv", index=False)
+
+    return df_final
+get_conversation()

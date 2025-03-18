@@ -73,7 +73,51 @@ def classify_conversation(conversation):
 #         return 'Successful', confidence_score
 #     else:
 #         return 'Unsuccessful', confidence_score
+
+# def classify_conversation(df):
+#     """
+#     Classifies the entire conversation using BART, based on the merged messages.
+#     :param df: DataFrame containing merged messages for a conversation
+#     :return: Classification label and confidence score
+#     """
+#     # Assuming that df has a 'mergedmessages' column
+#     merged_message = df['mergedmessages'].iloc[0]  # Extract merged messages from the DataFrame
+
+#     # Classify the conversation using the BART model
+#     predicted_label, confidence_score = classify_with_bart(merged_message)
+
+#     # Prepare the result in a JSON-serializable format (dictionary)
+#     return {
+#         "PredictedLabel": predicted_label,
+#         "ConfidenceScore": confidence_score
+#     }
+
+# def classify_conversation(conversation_data: dict):
+#     """
+#     Classify a conversation using Zero-Shot classification with BART.
     
+#     :param conversation_data: Dictionary containing 'UserMessage' and 'BotMessage'
+#     :return: A tuple of (status, confidence_score)
+#     """
+#     user_message = conversation_data['UserMessage']
+#     bot_message = conversation_data['BotMessage']
+    
+#     # Combine the user message and bot response as input text
+#     input_text = f"User: {user_message} Bot: {bot_message}"
+
+#     # Define candidate labels for zero-shot classification
+#     candidate_labels = ["Successful", "Unsuccessful"]
+
+#     # Classify the conversation using zero-shot classification
+#     result = zero_shot_classifier(input_text, candidate_labels)
+
+#     # Extract the classification result and the confidence score
+#     status = result['labels'][0]  # The label with the highest score
+#     confidence_score = result['scores'][0]  # Confidence score for the predicted label
+
+#     return status, confidence_score
+
+
 def store_classification_results(conversation_id, status, confidence_score):
 
     # Connect to the database

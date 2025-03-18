@@ -70,7 +70,7 @@ def calculate_bert_similarity(user_message, bot_response):
     
 #     # Determine the most likely class
 #     predicted_label = max(confidence_scores, key=confidence_scores.get)
-#     return predicted_label, float(confidence_scores[predicted_label])
+    # return predicted_label, float(confidence_scores[predicted_label])
 
 def classify_with_bart(user_message, bot_response):
     """
@@ -87,6 +87,22 @@ def classify_with_bart(user_message, bot_response):
     except Exception as e:
         print(f"Error in BART classification: {e}")
         return "Unsuccessful", 0.0  # Default to 'Unsuccessful'
+
+
+# def classify_with_bart(merged_message):
+#     """
+#     Classifies the conversation using BART zero-shot classification.
+#     :param merged_message: Entire structured conversation text
+#     :return: Predicted label and confidence score
+#     """
+#     # Perform zero-shot classification
+#     result = zero_shot_classifier(merged_message, candidate_labels=CANDIDATE_LABELS)
+
+#     # Extract classification result
+#     predicted_label = result["labels"][0]  # The highest confidence label
+#     confidence_score = result["scores"][0]  # Confidence of the classification
+
+#     return predicted_label, float(confidence_score)
 
 # def classify_with_bart(merged_message):
 #     """

@@ -1,4 +1,4 @@
-from db_connection import get_conversations , create_conversation_review_table , fetch_conversation_review , fetch_conversation_by_id 
+from db_connection import get_conversations , create_conversation_review_table , fetch_conversation_review , fetch_conversation_by_id , get_conversation 
 from model import classify_conversation , store_classification_results
 import pandas as pd
 from sklearn.metrics import classification_report, confusion_matrix
@@ -124,36 +124,36 @@ async def classify_conversation(request: ConversationRequest):
 
 # Endpoint to classify a specific conversation by ID
 # Endpoint to fetch and classify conversation
-@app.post("/classify_conversation/")
-async def classify_conversation_endpoint(request: ConversationRequest):
-    # Fetch the conversation from the database
-    conversation_data = get_conversations(request.conversation_id)
+# @app.post("/classify_conversation/BART")
+# async def classify_conversation_endpoint(request: ConversationRequest):
+#     # Fetch the conversation from the database
+#     conversation_data = get_conversation(request.conversation_id)
     
-    if conversation_data is None or len(conversation_data) == 0:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+#     if conversation_data is None or len(conversation_data) == 0:
+#         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    # Classify the conversation
-    classification_results = []
-    for index, row in conversation_data.iterrows():
-        user_message = row['UserMessage']
-        bot_response = row['BotMessage']
+#     # Classify the conversation
+#     classification_results = []
+#     for index, row in conversation_data.iterrows():
+#         user_message = row['UserMessage']
+#         bot_response = row['BotMessage']
         
-        # Classify conversation using classify_conversation function from model.py
-        status, confidence_score = classify_conversation({"UserMessage": user_message, "BotMessage": bot_response})
+#         # Classify conversation using classify_conversation function from model.py
+#         status, confidence_score = classify_conversation({"UserMessage": user_message, "BotMessage": bot_response})
         
-        # Store result in the list
-        classification_results.append({
-            "UserMessage": user_message,
-            "BotMessage": bot_response,
-            "PredictedLabel": status,
-            "ConfidenceScore": confidence_score
-        })
+#         # Store result in the list
+#         classification_results.append({
+#             "UserMessage": user_message,
+#             "BotMessage": bot_response,
+#             "PredictedLabel": status,
+#             "ConfidenceScore": confidence_score
+#         })
 
-        # Store classification result in the database (optional)
-        store_classification_results(request.conversation_id, status, confidence_score)
+#         # Store classification result in the database (optional)
+#         store_classification_results(request.conversation_id, status, confidence_score)
     
-    # Return classification results in the response
-    return {"classification_results": classification_results}
+#     # Return classification results in the response
+#     return {"classification_results": classification_results}
 
 # Existing classification pipeline function to run all conversations
 def run_classification_pipeline():

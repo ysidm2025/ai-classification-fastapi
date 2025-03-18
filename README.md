@@ -2,9 +2,11 @@
 
 ## Overview
 
-The **Chatbot Classification** project is designed to assess the quality and relevance of chatbot responses through machine learning and natural language processing techniques. Using models like BERT and BART, the system performs text classification tasks to evaluate the success of chatbot interactions. The project uses FastAPI for building the backend and provides an API for integrating chatbot evaluation into different applications.
+The **Chatbot Classification** project is designed to evaluate the success of chatbot interactions by analyzing conversations and classifying them as either "Successful" or "Unsuccessful." The system leverages a combination of advanced NLP models, including **BERT**, **BART**, and **OpenAI's API**, to perform text classification and similarity analysis.
 
-This repository includes multiple models and pipelines for similarity calculation, sentiment analysis, and zero-shot classification to classify chatbot interactions as either "Successful" or "Unsuccessful."
+The project is built using **FastAPI**, allowing seamless API integration for real-time evaluation of chatbot interactions. In addition to classifying conversations, the system provides sentiment analysis, semantic similarity scoring, and zero-shot classification capabilities. The OpenAI integration further enhances the evaluation by providing context-aware analysis of chatbot responses.
+
+This solution is ideal for businesses seeking to monitor and enhance the performance of their chatbots, ensuring that customer queries are handled effectively.
 
 ## Features
 
@@ -13,6 +15,8 @@ This repository includes multiple models and pipelines for similarity calculatio
 - **Sentiment Analysis**: Leverages Hugging Face transformers to evaluate the sentiment of user inputs and bot responses.
 - **FastAPI Integration**: Exposes an API for interacting with the classification models in real time, making it easier to integrate the solution into chatbots or customer service systems.
 - **Similarity Calculation**: Computes semantic similarity scores between user and bot messages using advanced NLP techniques.
+- **OpenAI-based Classification**: Integrates an OpenAI endpoint for analyzing conversations and classifying them based on contextual understanding.
+- **FastAPI Integration**: Exposes an API for interacting with classification models, including the OpenAI endpoint, in real time for seamless chatbot evaluation.
 
 ## Getting Started
 
@@ -21,6 +25,7 @@ This repository includes multiple models and pipelines for similarity calculatio
 - Python 3.7+
 - PIP (Python package installer)
 - Git (for version control)
+- OpenAI API Key (for OpenAI endpoint usage)  
 
 ### Installation
 
@@ -33,8 +38,12 @@ This repository includes multiple models and pipelines for similarity calculatio
 
 3. Install the necessary dependencies :
    pip install -r requirements.txt
-   
-4. Download the required datasets :
+
+4. Set Up Environment Variables: Create a .env file with the following values:  
+   OPENAI_API_KEY=your_openai_api_key
+   DATABASE_URL=your_postgres_database_url  
+
+5. Download the required datasets :
    python -m nltk.downloader stopwords punkt
 
 ## Running the FastAPI Server

@@ -40,7 +40,7 @@ This solution is ideal for businesses seeking to monitor and enhance the perform
    pip install -r requirements.txt
 
 4. Set Up Environment Variables: Create a .env file with the following values:  
-   OPENAI_API_KEY=your_openai_api_key
+   OPENAI_API_KEY=your_openai_api_key  
    DATABASE_URL=your_postgres_database_url  
 
 5. Download the required datasets :

@@ -1,32 +1,16 @@
-from db_connection import get_conversations , create_conversation_review_table , fetch_conversation_review , fetch_conversation_by_id , get_conversation 
-from model import classify_conversation , store_classification_results
+from db_connection import get_conversations , create_conversation_review_table , get_conversation 
+from model import classify_conversation , store_classification_results , classify_conversations
 import pandas as pd
 from sklearn.metrics import classification_report, confusion_matrix
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException , Form
 from pydantic import BaseModel
 import openai
 from dotenv import load_dotenv
 import os
+from fastapi.responses import HTMLResponse 
+import re
 
 load_dotenv()
-
-# , store_classification_results
-# , create_conversation_review_table
-
-# create_conversation_review_table()
-
-# def run_classification_pipeline():
-#     # Get cleaned conversation data from the database
-#     df_cleaned = get_conversations()
-    
-#     # Iterate through each conversation
-#     for index, row in df_cleaned.iterrows():
-#         status, confidence_score = classify_conversation(row)
-#         # store_classification_results(row["ConversationId"], status, confidence_score)
-#         print(f"Conversation {row['ConversationId']} classifie`d as {status} with confidence {confidence_score}")
-    
-# if __name__ == "__main__":
-#     run_classification_pipeline()
 
 # FastAPI app initialization
 app = FastAPI()
@@ -38,8 +22,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
 # Store ground truth and predictions
-y_true = []  # Actual labels (manually set or fetched from DB)
-y_pred = []  # Model predictions
+# y_true = []  # Actual labels (manually set or fetched from DB)
+# y_pred = []  # Model predictions
 
 ## This is default original without FASTAPI PIPELINE -> PIPELINES
 def run_classification_pipelines():
@@ -67,13 +51,16 @@ def run_classification_pipelines():
     # I have created this function to check if new table is storing vlues correctly
     # fetch_conversation_review() 
 
+
+class ClassificationResult(BaseModel):
+    UserMessage: str
+    BotMessage: str
+    PredictedLabel: str
+    ConfidenceScore: float
+
 # Request model for conversation ID
 class ConversationRequest(BaseModel):
     conversation_id: int
-
-# class ConversationResponse(BaseModel):
-#     conversation_id: int
-#     classification: str
 
 class ConversationResponse(BaseModel):
     conversation_id: int
@@ -102,7 +89,7 @@ async def classify_conversation(request: ConversationRequest):
     try:
         # Make an API call to OpenAI using the new chat-completion method
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Or choose another model (gpt-3.5-turbo, gpt-4, etc.)
+            model="gpt-3.5-turbo",  
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
@@ -116,7 +103,7 @@ async def classify_conversation(request: ConversationRequest):
         return ConversationResponse(
             conversation_id=conversation_id, 
             classification=classification, 
-            conversation=conversation_text  # Full conversation included
+            conversation=conversation_text  
         )
 
     except Exception as e:
@@ -124,7 +111,7 @@ async def classify_conversation(request: ConversationRequest):
 
 # Endpoint to classify a specific conversation by ID
 # Endpoint to fetch and classify conversation
-# @app.post("/classify_conversation/BART")
+# @app.post("/classify_conversation/BART/user+bot")
 # async def classify_conversation_endpoint(request: ConversationRequest):
 #     # Fetch the conversation from the database
 #     conversation_data = get_conversation(request.conversation_id)
@@ -139,7 +126,7 @@ async def classify_conversation(request: ConversationRequest):
 #         bot_response = row['BotMessage']
         
 #         # Classify conversation using classify_conversation function from model.py
-#         status, confidence_score = classify_conversation({"UserMessage": user_message, "BotMessage": bot_response})
+#         status, confidence_score = classify_conversations({"UserMessage": user_message, "BotMessage": bot_response})
         
 #         # Store result in the list
 #         classification_results.append({
@@ -153,6 +140,38 @@ async def classify_conversation(request: ConversationRequest):
 #         store_classification_results(request.conversation_id, status, confidence_score)
     
 #     # Return classification results in the response
+#     return {"classification_results": classification_results}
+
+# @app.post("/classify_conversation/BART/merged")
+# async def classify_conversation_endpoint(request: ConversationRequest):
+#     # Fetch the conversation from the database
+#     conversation_data = get_conversations(request.conversation_id)
+    
+#     if conversation_data is None or len(conversation_data) == 0:
+#         raise HTTPException(status_code=404, detail="Conversation not found")
+
+#     # Prepare a list for classification results
+#     classification_results = []
+
+#     # Classify the merged message using BART for each row
+#     for index, row in conversation_data.iterrows():
+#         merged_message = row['mergedmessages']
+
+#         # Classify conversation using BART (you can add BART classification code here)
+#         status, confidence_score = classify_conversation(merged_message)
+        
+#         # Append result to the list
+#         classification_results.append({
+#             "conversationId": row['ConversationId'],
+#             "mergedmessages": merged_message,
+#             "PredictedLabel": status,
+#             "ConfidenceScore": confidence_score
+#         })
+
+#         # Optional: Store classification result in the database
+#         store_classification_results(row['ConversationId'], status, confidence_score)
+
+#     # Return classification results
 #     return {"classification_results": classification_results}
 
 # Existing classification pipeline function to run all conversations

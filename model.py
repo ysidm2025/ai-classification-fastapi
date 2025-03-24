@@ -1,122 +1,103 @@
 import pymysql
 import mysql.connector
-from text_analysis import analyze_sentiment, calculate_semantic_similarity , calculate_bert_similarity , classify_with_bart
+from text_analysis import classify_with_bart , classify_with_barts
 import re
+from db_connection import get_conversations
 
-def classify_conversation(conversation):
+def classify_conversations(conversation):
+
     # Extract user and bot messages
     user_message = conversation["UserMessage"]
     # print(user_message)
     bot_response = conversation["BotMessage"]
     # print(bot_response)
 
-    # Sentiment analysis
-    sentiment_label, sentiment_score = analyze_sentiment(bot_response)
-
     # Check for fallback responses
-    # Define fallback phrases for user and bot
     user_fallback_phrases = [
         "talk to operator", "talk to a human", "speak to a person", 
         "speak with a human", "speak to a human", "talk to a person", 
         "speak to a leasing agent", "talk to a human ?", "talk to operator ?", 
         "speak to a person ?", "speak with a human ?", "speak to a human ?", 
-        "talk to a person ?", "speak to a leasing agent ?"
+        "talk to a person ?", "speak to a leasing agent ?" , "Can I talk to a human?"
     ]
     
     bot_fallback_phrases = [
-        "I don’t understand", "Can you rephrase?", "Sorry, I’m not sure" , "I am unable" , "Sorry, I could not understand.","Sorry, I missed what you just said. Can you say that again?"
+        "I don’t understand", "Can you rephrase?", "Sorry, I’m not sure", "I am unable", 
+        "Sorry, I could not understand.", "Sorry, I missed what you just said. Can you say that again?"
     ]
 
     # Check if user message contains any of the user fallback phrases
     if any(phrase.lower() in user_message.lower() for phrase in user_fallback_phrases):
-        return 'Unsuccessful', sentiment_score
+        return 'Unsuccessful', 0.0
     
     # Check if bot response contains any of the bot fallback phrases
     if any(phrase.lower() in bot_response.lower() for phrase in bot_fallback_phrases):
-        return 'Unsuccessful', sentiment_score
-    
+        return 'Unsuccessful', 0.0
 
-    # Semantic similarity
-    similarity_score = calculate_semantic_similarity(user_message, bot_response)
+    predicted_label, confidence_score = classify_with_barts(user_message, bot_response)
 
-    # # Semantic similarity using BERT
-    # similarity_score = calculate_bert_similarity(user_message, bot_response)
-    
-    # # code for BERT and semantic
-    # # Define success criteria
-    # if sentiment_label == "POSITIVE" and similarity_score > 0.25:
-    #     return 'Successful', similarity_score
-    # else:
-    #     return 'Unsuccessful', similarity_score
-
-    # uncommeny below for function
-    # # Perform classification with BART
-    predicted_label, confidence_score = classify_with_bart(user_message, bot_response)
-
-    #code for BART only
     # Define success criteria
     if predicted_label == "Successful" and confidence_score > 0.70:
         return 'Successful', confidence_score
     else:
         return 'Unsuccessful', confidence_score
 
-# def classify_conversation(merged_message):
-#     """
-#     Classifies the entire merged conversation using BART.
-#     :param merged_message: Structured conversation text (User + Bot messages)
-#     :return: Classification label and confidence score
-#     """
-#     predicted_label, confidence_score = classify_with_bart(merged_message)
+# Fallback phrases
+user_fallback_phrases = [
+    "talk to operator", "talk to a human", "speak to a person", 
+    "speak with a human", "speak to a human", "talk to a person", 
+    "speak to a leasing agent", "talk to a human ?", "talk to operator ?", 
+    "speak to a person ?", "speak with a human ?", "speak to a human ?", 
+    "talk to a person ?", "speak to a leasing agent ?" , "Can I talk to a human?"
+]
+bot_fallback_phrases = [
+    "I don’t understand", "Can you rephrase?", "Sorry, I’m not sure", "I am unable", 
+    "Sorry, I could not understand.", "Sorry, I missed what you just said. Can you say that again?"
+]
 
-#     # Define success criteria
-#     if predicted_label == "Successful":
-#         return 'Successful', confidence_score
-#     else:
-#         return 'Unsuccessful', confidence_score
+def check_fallback_phrases(messages, fallback_phrases):
+    """
+    Checks if any of the given messages contain fallback phrases.
+    :param messages: List of messages (either user or bot)
+    :param fallback_phrases: List of fallback phrases to check
+    :return: True if any fallback phrase is found, otherwise False
+    """
+    for message in messages:
+        message = message.lower()  # Ensure case-insensitive matching
+        for phrase in fallback_phrases:
+            if phrase.lower() in message:  # Check if fallback phrase is present in message
+                print(f"Fallback phrase found: '{phrase}' in message: '{message}'")  # Debugging log
+                return True
+    return False
 
-# def classify_conversation(df):
-#     """
-#     Classifies the entire conversation using BART, based on the merged messages.
-#     :param df: DataFrame containing merged messages for a conversation
-#     :return: Classification label and confidence score
-#     """
-#     # Assuming that df has a 'mergedmessages' column
-#     merged_message = df['mergedmessages'].iloc[0]  # Extract merged messages from the DataFrame
+def classify_conversation(merged_message):
+    """
+    Classifies the entire merged conversation using BART with fallback phrase detection.
+    :param merged_message: Structured conversation text (User + Bot messages)
+    :return: Classification label and confidence score
+    """
+    # Clean merged message to handle extra spaces and newlines
+    # merged_message = merged_message.strip()
 
-#     # Classify the conversation using the BART model
-#     predicted_label, confidence_score = classify_with_bart(merged_message)
+    # Updated regex to better capture user and bot messages, including multi-line messages
+    user_messages = re.findall(r'user:\s*([^b]+)', merged_message, re.IGNORECASE)
+    bot_messages = re.findall(r'bot:\s*([^u]+)', merged_message, re.IGNORECASE)
 
-#     # Prepare the result in a JSON-serializable format (dictionary)
-#     return {
-#         "PredictedLabel": predicted_label,
-#         "ConfidenceScore": confidence_score
-#     }
+    # Clean up the messages (strip leading/trailing spaces)
+    user_messages = [msg.strip() for msg in user_messages if msg.strip()]
+    bot_messages = [msg.strip() for msg in bot_messages if msg.strip()]
 
-# def classify_conversation(conversation_data: dict):
-#     """
-#     Classify a conversation using Zero-Shot classification with BART.
-    
-#     :param conversation_data: Dictionary containing 'UserMessage' and 'BotMessage'
-#     :return: A tuple of (status, confidence_score)
-#     """
-#     user_message = conversation_data['UserMessage']
-#     bot_message = conversation_data['BotMessage']
-    
-#     # Combine the user message and bot response as input text
-#     input_text = f"User: {user_message} Bot: {bot_message}"
+    # Check for fallback phrases in user and bot messages
+    # if check_fallback_phrases(user_messages, user_fallback_phrases) or check_fallback_phrases(bot_messages, bot_fallback_phrases):
+    #     return 'Unsuccessful', 0.9  # If fallback phrase found, mark as unsuccessful with low confidence
 
-#     # Define candidate labels for zero-shot classification
-#     candidate_labels = ["Successful", "Unsuccessful"]
+    # Proceed with BART classification
+    predicted_label, confidence_score = classify_with_bart(merged_message)
 
-#     # Classify the conversation using zero-shot classification
-#     result = zero_shot_classifier(input_text, candidate_labels)
-
-#     # Extract the classification result and the confidence score
-#     status = result['labels'][0]  # The label with the highest score
-#     confidence_score = result['scores'][0]  # Confidence score for the predicted label
-
-#     return status, confidence_score
-
+    if predicted_label == "Successful":
+        return 'Successful', confidence_score
+    else:
+        return 'Unsuccessful', confidence_score
 
 def store_classification_results(conversation_id, status, confidence_score):
 
@@ -143,61 +124,6 @@ def store_classification_results(conversation_id, status, confidence_score):
         connection.commit()
     except mysql.connector.Error as e:
         print(f"Database error: {e}")
-    finally:
-        cursor.close()
-        connection.close()
-
-def fetch_conversation_by_id(conversation_id):
-    """Fetch a specific conversation by conversation_id."""
-    try:
-        connection = mysql.connector.connect(
-            host="pcz218dbl23",
-            user="prakashd",
-            password="TLzWqu8Kyp",
-            database="omni_qa_db"
-        )
-        
-        cursor = connection.cursor()
-
-        # Fetch conversation data from both incoming and outgoing tables
-        cursor.execute("""
-            SELECT c.conversationid, c.message, c.conversationincomingtime
-            FROM conversationincoming c
-            WHERE c.conversationid = %s
-        """, (conversation_id,))
-        incoming = cursor.fetchall()
-        
-        cursor.execute("""
-            SELECT c.conversationid, c.message, c.conversationoutgoingtime
-            FROM conversationoutgoing c
-            WHERE c.conversationid = %s
-        """, (conversation_id,))
-        outgoing = cursor.fetchall()
-
-        # Create DataFrames from the fetched data
-        df_incoming = pd.DataFrame(incoming, columns=["ConversationId", "UserMessage", "Timestamp"])
-        df_outgoing = pd.DataFrame(outgoing, columns=["ConversationId", "BotMessage", "Timestamp"])
-
-        # Convert timestamps to datetime
-        df_incoming["Timestamp"] = pd.to_datetime(df_incoming["Timestamp"])
-        df_outgoing["Timestamp"] = pd.to_datetime(df_outgoing["Timestamp"])
-
-        # Merge user and bot messages on ConversationId and Timestamp
-        df_combined = pd.merge(df_incoming, df_outgoing, on=["ConversationId", "Timestamp"], how="outer")
-        df_combined.sort_values(by=["ConversationId", "Timestamp"], inplace=True)
-
-        # Group by ConversationId to combine messages
-        df_grouped = df_combined.groupby("ConversationId").agg({
-            "UserMessage": lambda x: " ".join(x.dropna()),  # Combine user messages
-            "BotMessage": lambda x: " ".join(x.dropna())    # Combine bot responses
-        }).reset_index()
-
-        # Return the processed DataFrame
-        return df_grouped
-    
-    except mysql.connector.Error as e:
-        print(f"Database error: {e}")
-        return None
     finally:
         cursor.close()
         connection.close()

@@ -27,7 +27,9 @@ def load_labeled_data():
     Load labeled conversations from labeled_conversations.csv.
     """
     try:
-        df = pd.read_csv("labeled_conversations.csv")
+        # df = pd.read_csv("labeled_conversations.csv")
+        df = pd.read_csv("test_set_updated.csv")
+
         print("✅ Loaded labeled conversations from labeled_conversations.csv.")
         return df
     except FileNotFoundError:
@@ -100,7 +102,18 @@ def classify_conversation(conversation_id, merged_messages):
             - Bot: "Here is a map of the nearest parks in your area: [map link]."
             - This conversation is 'Successful' because the bot gave a relevant, accurate response to the user's request.
 
-            Example of Unsuccessful Conversation (where bot is giving too many irrelevant questions and not addressing needs directly):
+            example 2 of Successful Conversation :-
+            -user: Check Balance Due 
+            -bot: Late Fees: $867.00 Late Fees: $1000.00 Late Fees: $1000.00 Late Fees: $1000.00 Late Fees: $1000.00 Late Fees: $1500.00 Late Fees: $1000.00 Rent- Residential: $1000.00 Late Fees: $22.34 Rent- Residential: $468.00 Parking - Industrial: $100.00 Rent- Residential: $1000.00 Late Fees: $31.00 Unapplied Credit: $0.00 Total: $9988.34 
+            -bot: Your rent is due on the 10th of the month and you have a grace period of 2 days after which late fees start to accrue. 
+            -bot: How else can I help you? 
+            -user: late fee 
+            -bot: Current late fee charges: $ 7420.34 
+            -bot: Your rent is due on the 10th of the month and you have a grace period of 2 days after which late fees start to accrue. 
+            -bot: How else can I help you?
+            - This conversation is successful because it have the total amount which is the actual balance due .
+
+            One of many example of Unsuccessful Conversation 
             - User: "Do you have 2 bedrooms?"
             - Bot: "When would you like to move in?"
             - User: "Mid Oct"
@@ -108,8 +121,23 @@ def classify_conversation(conversation_id, merged_messages):
             - Bot: "Would you like to know more about our apartments?"
             - User: "How about 3 bedrooms?"
             - Bot: "Pet Policy Cats - 1 allowed Max weight 15 lb each, Rent $50.00, Deposit $50.00, Comments: We love our feline companions! Dogs - 1 allowed Max weight 40 lb each, Rent $50.00, Deposit $100.00, Pet Care available."
-            - This conversation is 'Unsuccessful' because the bot gave a **non-specific, repetitive response** to each query and when asked about 3 bedrooms he returned pet policy .
+            - This conversation is 'Unsuccessful' because when the bot was asked about 3 bedrooms he returned pet policy .
+
+            example 2 of Unsuccessful Conversation :
+            "user: Maintenance Request bot: If this is an Emergency Maintenance request, please call (805) 001-2000. 
+            bot: Please describe your issue so that I can start the service request. 
+            user: water supply  bot: Do we have permission to enter the apartment? 
+            user: Yes 
+            bot: Do you have pets or any special instructions for our service team? 
+            user: yes 
+            bot: Your service request has been submitted successfully. Your request I.D. is 8398 bot: How else can I help you? 
+            user: pay rent 
+            bot: Unable to complete transaction. Please try again later."
+            -This conversation is Unsuccessful because bot was Unable to complete transaction .
+
         """},
+        # (where bot is giving too many irrelevant questions and not addressing needs directly):
+        # gave a **non-specific, repetitive response** to each query and
 
         # User's conversation content
         {"role": "user", "content": merged_messages},
@@ -168,7 +196,9 @@ def classify_and_update():
     df["predicted_label"] = predicted_labels
 
     # Save updated labeled data
-    df.to_csv("labeled_conversations.csv", index=False)
+    # df.to_csv("labeled_conversations.csv", index=False)
+    df.to_csv("test_set_updated.csv", index=False)
+
     print("✅ Updated predictions saved to labeled_conversations.csv successfully!")
 
     # Calculate accuracy
@@ -178,6 +208,45 @@ def classify_and_update():
 
     print(f"📊 Classification Accuracy: {round(accuracy * 100, 2)}%")
 
+def convert_file():
+    # Load the CSV file
+    file_path = "test_set.csv"  # Replace with your CSV file path
+    df = pd.read_csv(file_path)
+
+    # Convert 1 to 'Successful' and 0 to 'Unsuccessful' in the 'label' column
+    df['label'] = df['label'].replace({1: 'Successful', 0: 'Unsuccessful'})
+
+    # Save the updated CSV file
+    output_path = "test_set.csv"  # Specify the desired output file name
+    df.to_csv(output_path, index=False)
+
+    print(f"File updated and saved as '{output_path}'")
+
+# Load test_set.csv
+file_path = "test_set.csv"  # Path to your test_set.csv file
+df = pd.read_csv(file_path)
+
+# Add 'mergedmessages' column by fetching mergedmessages for each ConversationID
+def get_merged_message(conversation_id):
+    # Call your existing get_conversations function
+    conversations_df = get_conversations(conversation_id)
+    
+    # Extract mergedmessages from the result
+    if not conversations_df.empty:
+        return conversations_df['mergedmessages'].values[0]
+    return ''  # Return empty string if not found
+
+# Apply get_merged_message to fetch and add the 'mergedmessages' column
+df['mergedmessages'] = df['ConversationId'].apply(get_merged_message)
+
+# Save the updated CSV file
+output_path = "test_set_updated.csv"  # Name of the updated file
+df.to_csv(output_path, index=False)
+
+print(f"✅ File updated successfully and saved as '{output_path}'")
+
 if __name__ == "__main__":
+    # get_merged_message()
+    # convert_file()
     classify_and_update()  # Or the name of your main interactive function
 

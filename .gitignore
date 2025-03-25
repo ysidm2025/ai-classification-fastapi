@@ -32,3 +32,7 @@ final_convo.csv
 final_convo.pkl
 
 labeled_conversations.csv
+
+test_set.csv
+
+test_set_updated.csv

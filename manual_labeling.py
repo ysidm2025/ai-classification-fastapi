@@ -6,11 +6,10 @@ labeled_df = pd.DataFrame(columns=["ConversationId", "mergedmessages", "label"])
 
 # Load labeled data if the file already exists
 try:
-    labeled_df = pd.read_csv("labeled_conversations.csv")
-    print("✅ Loaded existing labeled data from labeled_conversations.csv.")
+    labeled_df = pd.read_csv("test_set.csv")
+    print("✅ Loaded existing labeled data from test_set.csv.")
 except FileNotFoundError:
     print("⚠️ No existing labeled data found. Starting fresh.")
-
 
 # Function to manually label conversations
 def label_conversation(conversation_id):
@@ -91,12 +90,12 @@ def save_labeled_data():
     """
     if labeled_df.empty:
         # Write only the headers if the DataFrame is empty
-        pd.DataFrame(columns=["ConversationId", "mergedmessages", "label"]).to_csv("labeled_conversations.csv", index=False)
+        pd.DataFrame(columns=["ConversationId", "mergedmessages", "label"]).to_csv("test_set.csv", index=False)
         print("\n⚠️ All conversations deleted. CSV file cleared but headers retained.")
     else:
         # Save non-empty DataFrame to CSV
-        labeled_df.to_csv("labeled_conversations.csv", index=False)
-        print("\n✅ All labeled conversations saved to labeled_conversations.csv successfully!")
+        labeled_df.to_csv("test_set.csv", index=False)
+        print("\n✅ All labeled conversations saved to test_set.csv successfully!")
 
 # Function to display summary of labeled conversations
 def display_summary():
